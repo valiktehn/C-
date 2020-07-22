@@ -1,0 +1,405 @@
+//Andrew Simonetta
+//SU Net ID: asimonet, SUID: 431773640
+//
+//HW3
+//Due: 11:59PM, February 21 (Friday)
+
+#include <iostream>
+#include <list>
+#include <map>
+#include <string>
+#include <tuple>
+#include <iomanip>
+#include <string>
+using namespace std;
+
+class course {
+public:
+	string name;
+	int section;
+	int credits;
+	string grade;
+	course() {}
+	course(string n, int s, int c, string g) { name = n; section = s; credits = c; grade = g; }
+	friend ostream& operator<< (ostream & str, const course c);
+	//You might need to implement some overloaded operators here.
+
+};
+//Implement the following functions.
+//When adding a student, if the student is already in DB, then ignore the operation.
+//When adding a course, if the course is already in DB, then ignore the operation.
+//When dropping a course, if the course does not exist, then ignore the operation.
+//When removing a student, if the student does not exist, then ignore the operation.
+//All courses in a semester need to be sorted.
+//When dropping or adding a course, overall GPA, semester GPA, overall credits and semester credits all need to be updated.
+
+//Semester numbers:  Spring 2019: 20191; Fall 2019: 20192, etc. 
+
+void add_student(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id);
+void remove_student(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id);
+void add_course(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id, course &c); //20171 Spring semester of 2017; 20172: Fall semester of 2017
+																//All courses in the list should be sorted according to name (increasing order)
+void drop_course(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id, course c);
+void print_student_semester_courses(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id);
+void print_student_all_courses(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id);
+float get_gpa(string grade);
+void deletePointers(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB);
+//Implement additional functions such that you can do
+//cout << DB << endl;
+
+//map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>
+
+template <typename T1, typename T2> ostream& operator<< (ostream& str, const map<T1, T2*>& M) {
+	str << "DB:" << endl;
+	for (auto i : M) {
+		str << "ID: " << i.first << endl;
+		str << *i.second << endl;
+	}
+
+	return str;
+}
+
+template <typename T1, typename T2> ostream& operator<< (ostream& str, const map<T1, T2>& M) {
+
+	for (auto i : M) {
+		str << "Semester: " << i.first << endl;
+		str << i.second << endl;
+	}
+
+	return str;
+}
+
+template <typename T1, typename T2, typename T3> ostream& operator<< (ostream& str, const tuple<T1, T2, T3*>& V) {
+	str << "GPA: " << get<1>(V) << endl;
+	str << "Credits: " << get<0>(V) << endl;
+	str << *get<2>(V) << endl;
+
+	return str;
+}
+
+/*
+template <typename T1, typename T2, typename T3> ostream& operator<< (ostream& str, const tuple<T1, T2, T3*>& V) {
+	str << "GPA: " << get<1>(V) << endl;
+	str << "Credits: " << get<0>(V) << endl;
+	str << get<2>(V) << endl;
+
+	return str;
+}
+*/
+template <typename T> ostream& operator<< (ostream& str, const list<T*>& L) {
+
+	for (auto i : L) {
+		cout << "(" << i->name << " " << i->section << " " << i->credits << " " << i->grade << ") ";
+	}
+
+	return str;
+}
+
+ostream& operator<< (ostream& str, const course& C) {
+
+	return str;
+}
+//You might need to implement some overloaded operators in the course class.
+
+int main() {
+	map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>  DB;
+
+	add_student(DB, 11111);
+	course C1("CIS554", 1, 3, "A-"), C2("CSE674", 1, 3, "B+"), C3("MAT296", 8, 4, "A"), C4("WRT205", 5, 3, "A");
+
+
+	add_course(DB, 20171, 11111, C1);
+	add_course(DB, 20171, 11111, C4);
+	add_course(DB, 20171, 11111, C3);
+	add_course(DB, 20171, 11111, C2);
+	
+	print_student_semester_courses(DB, 20171, 11111);
+
+	drop_course(DB, 20171, 11111, C1);
+	print_student_semester_courses(DB, 20171, 11111); //sorted according to course name
+	
+	
+	course C5("CIS351", 2, 3, "A-"), C6("PSY205", 5, 3, "B+"), C7("MAT331", 2, 3, "A"), C8("ECN203", 4, 3, "A");
+	add_course(DB, 20172, 11111, C5);
+	add_course(DB, 20172, 11111, C6);
+	add_course(DB, 20172, 11111, C7);
+	add_course(DB, 20172, 11111, C8);
+	add_course(DB, 20172, 11111, C3);
+	print_student_all_courses(DB, 11111);//ID GPA
+	
+	add_student(DB, 11112);
+	add_course(DB, 20171, 11112, C2);
+	add_course(DB, 20171, 11112, C5);
+	add_course(DB, 20171, 11112, C7);
+	add_course(DB, 20171, 11112, C4);
+	print_student_semester_courses(DB, 20171, 11112);
+
+	add_course(DB, 20172, 11112, C8);
+	add_course(DB, 20172, 11112, C3);
+	add_course(DB, 20172, 11112, C5);
+	add_course(DB, 20172, 11112, C1);
+	print_student_semester_courses(DB, 20172, 11112);
+	
+	print_student_all_courses(DB, 11112);
+
+	/*
+	auto it1 = DB.find(11111);
+	if (it1 == DB.end())
+		cout << "Student 11111 Not Found" << endl;
+	else
+		cout << "Student 11111 Found" << endl;
+	*/
+	cout << DB << endl;
+	remove_student(DB, 11111);
+	cout << DB << endl;
+	/*
+	auto it2 = DB.find(11111);
+	if (it2 == DB.end())
+		cout << "Student 11111 Not Found" << endl;
+	else
+		cout << "Student 11111 Found" << endl;
+	*/
+
+	remove_student(DB, 11111);
+	print_student_all_courses(DB, 11111);
+	print_student_semester_courses(DB, 20172, 11111);
+	drop_course(DB, 20171, 11111, C1);
+	add_course(DB, 20172, 11111, C3);
+
+	//getchar();
+	//getchar();
+
+	//cleans up all left over pointers (at bottom of src)
+	deletePointers(DB);
+
+	return 0;
+}
+
+void add_student(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id) {
+	//Is ID a duplicate?
+	auto it = DB.find(id);
+	if (it != DB.end()) {
+		cout << "duplicate found. Cannot add student." << endl;
+		return;
+	}
+
+	//Add ID
+	tuple<int, float, map<int, tuple<int, float, list<course*>*> >*> * placeholder = new tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>;
+	DB[id] = placeholder;
+	auto &oT = *DB[id];
+	get<2>(oT) = new map<int, tuple<int, float, list<course*>*> >;
+
+	cout << id << " added" << endl;
+}
+void remove_student(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id) {
+	if (DB.empty()) {
+		cout << "Can't remove from empty queue" << endl;
+		return;
+	}
+	//Does ID exist?
+	auto it = DB.find(id);
+	if (it == DB.end()) {
+		cout << id << " does not exist. Cannot remove student." << endl;
+		return;
+	}
+
+	DB.erase(id);
+	cout << id << " erased" << endl;
+}
+
+void add_course(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id, course &c) {
+	//Does ID exist?
+	auto it1 = DB.find(id);
+	if (it1 == DB.end()) {
+		cout << id << " does not exist. Cannot add course." << endl;
+		return;
+	}
+
+	//map<int, tuple<int, float, list<course*>*> >*>*>
+	//get OVERALL tuple for student id
+	auto& t1 = *DB[id];
+
+	//get SEMESTER map for student id (from OVERALL tuple)
+	auto &t2 = *get<2>(t1); 
+
+	//Check if Semester already exists
+	auto it = t2.find(semester); //??
+
+	if (it != t2.end()) {
+		//Semester EXISTS
+
+		//get SEMESTER tuple for student id (from SEMSESTER map)
+		auto &t3 = t2[semester];
+		
+		//get COURSE list for student id (from SEMESTER tuple)
+		auto t4 = get<2>(t3);
+
+		//Check for each course in COURSE list
+		for (auto i : t2) {
+			auto& t3 = t2[i.first];
+			auto& t4 = *get<2>(t3);
+			for (auto i : t4) {
+				//if course EXISTS
+				if (i->name == c.name) {
+					cout << "found " << i->name << " ";
+					cout << c.name << " already exists for " << semester << endl;
+					return;
+				}
+			}
+		}
+
+		//Soft confirmation that course does NOT EXIST
+		//update s credits and gpa
+		get<0>(t3) += c.credits;
+		get<1>(t3) += get_gpa(c.grade);
+
+		//update ogpa and ocredits
+		get<1>(t1) += get_gpa(c.grade);
+		get<0>(t1) += c.credits;
+
+		//add class to the semester in sorted order
+		auto it = t4->begin();
+		for (auto i : *t4) {
+			if (i->name > c.name) {
+				t4->insert(it, &c);
+				cout << c.name << " successfully added before " << i->name << endl;
+				return;
+			}
+			it++;
+		}
+		t4->push_back(&c);
+		cout << c.name << " successfully added at the end" << endl;
+
+		return;
+	}
+
+	//Semester does NOT EXIST
+	//create new COURSE for semester
+	list<course*>* l = new list<course*>;
+	//add course to the COURSE list for semester
+	l->push_back(&c);
+	//create new SEMESTER tuple for SEMESTER map
+	tuple<int, float, list<course*>*> placeholder = make_tuple(c.credits, get_gpa(c.grade), l);
+	t2[semester] = placeholder;
+	//update ogpa and ocredits
+	get<1>(t1) += get_gpa(c.grade);
+	get<0>(t1) += c.credits;
+	cout << c.name << " added to new " << semester << endl;
+	
+	return;
+}
+
+void drop_course(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id, course c) {
+	//Does ID exist?
+	auto it1 = DB.find(id);
+	if (it1 == DB.end()) {
+		cout << id << " does not exist. Cannot drop course." << endl;
+		return;
+	}
+
+	auto &r = *get<2>((*get<2>(*DB[id]))[semester]);
+	auto ind = r.begin();
+	for (auto i : r) {
+		if (i->name == c.name) {
+			get<0>(*DB[id]) -= c.credits;
+			get<1>(*DB[id]) -= get_gpa(c.grade);
+			get<0>((*get<2>(*DB[id]))[semester]) -= c.credits;
+			get<1>((*get<2>(*DB[id]))[semester]) -= get_gpa(c.grade);
+			
+			r.erase(ind);
+
+			cout << c.name << " removed successfully" << endl;
+			return;
+		}
+		ind++;
+	}
+	cout << c.name << " does not exist" << endl;
+}
+
+void print_student_semester_courses(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int semester, int id) {
+	//Does ID exist?
+	auto it = DB.find(id);
+	if (it == DB.end()) {
+		cout << id << " does not exist. Cannot print semester courses." << endl;
+		return;
+	}
+	
+	auto &courseList = *get<2>((*get<2>(*DB[id]))[semester]);
+	cout << endl;
+	cout << "ID: " << id << endl;
+	cout << "Semester: " << semester << endl;
+	cout << "GPA: " << setprecision(2) << fixed << get<1>((*get<2>(*DB[id]))[semester]) << endl;
+	cout << "Credits: " << get<0>((*get<2>(*DB[id]))[semester]) << endl;
+	for (auto i : courseList) {
+		cout << "(" << i->name << " " << i->section << " " << i->credits << " " << i->grade << ") ";
+	}
+	cout << endl << endl;
+}
+void print_student_all_courses(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB, int id) {
+	//Does ID exist?
+	auto it = DB.find(id);
+	if (it == DB.end()) {
+		cout << id << " does not exist. Cannot print all courses" << endl;
+		return;
+	}
+	
+	cout << endl;
+	cout << endl;
+	cout << "ID: " << id << endl;
+	cout << "Overall GPA: " << get<1>(*DB[id]) << endl;
+	cout << "Overall Credits: " << get<0>(*DB[id]) << endl;
+	for (auto a : *get<2>(*DB[id])) {
+		cout << "Semester: " << a.first << endl;
+		cout << "GPA: " << setprecision(2) << fixed << get<1>(a.second) << endl;
+		cout << "Credits: " << get<0>(a.second) << endl;
+
+		for (auto i : *get<2>(a.second)) {
+			cout << "(" << i->name << " " << i->section << " " << i->credits << " " << i->grade << ") ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+
+float get_gpa(string grade) {
+	if (grade == "A")
+		return 4.0;
+	if (grade == "A-")
+		return 3.7;
+	if (grade == "B+")
+		return 3.3;
+	if (grade == "B")
+		return 3.0;
+	if (grade == "B-")
+		return 2.7;
+	if (grade == "C+")
+		return 2.3;
+	if (grade == "C")
+		return 2;
+	if (grade == "C-")
+		return 1.7;
+	if (grade == "D+")
+		return 1.3;
+	if (grade == "D")
+		return 1;
+	if (grade == "D-")
+		return 0.7;
+
+	return 0;
+}
+
+void deletePointers(map<int, tuple<int, float, map<int, tuple<int, float, list<course*>*> >*>*>& DB) {
+	//delete all
+	for (auto a : DB) {
+		for (auto b : *get<2>(*a.second)){
+			auto ind = get<2>(b.second)->begin();
+			auto& r = *get<2>(b.second);
+			while (ind != get<2>(b.second)->end()) {
+				ind = r.erase(ind);
+			}
+			delete get<2>(b.second);
+		}
+		delete get<2>(*a.second);
+		delete a.second;
+	}
+}
